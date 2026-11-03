@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Gym Tracker</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script></body></html>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+*{box-sizing:border-box}input{max-width:100%}
+:root{--bg:#eef1f5;--card:#fff;--ink:#12161c;--mut:#667085;--line:#d9dee7;--acc:#2447f5;--on:#fff;--ok:#16794c;--okbg:#dff3e7;--warn:#b54708}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1319;--card:#181e27;--ink:#eef1f6;--mut:#98a2b3;--line:#2a3340;--acc:#7c94ff;--on:#0f1319;--ok:#6ee7a8;--okbg:#17372a;--warn:#fdb022}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0f1319;--card:#181e27;--ink:#eef1f6;--mut:#98a2b3;--line:#2a3340;--acc:#7c94ff;--on:#0f1319;--ok:#6ee7a8;--okbg:#17372a;--warn:#fdb022}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 Barlow,-apple-system,system-ui,sans-serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 84px}
+h1,h2,.n{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.2px}
+header{padding:14px 0 4px}h1{margin:0;font-size:30px}.sub{color:var(--mut);font-size:14px}
+.row{display:flex;gap:8px;overflow-x:auto;padding:8px 0;scrollbar-width:none}.row::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:8px 13px;font:600 15px Barlow,sans-serif;min-height:40px}
+.chip.on{background:var(--acc);color:var(--on);border-color:var(--acc)}.chip.done{border-color:var(--ok)}
+.days{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:4px 0 8px}
+.days .chip{border-radius:12px;text-align:center;line-height:1.15;padding:9px 6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:8px 0;padding:12px 14px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;cursor:pointer}
+.nm{font-weight:600}.tg{color:var(--mut);font-size:14px}.ok{color:var(--ok);font-weight:600;font-size:14px;text-align:right}
+.ex{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+input{width:100%;box-sizing:border-box;font:500 18px Barlow,sans-serif;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.btn{border:0;border-radius:10px;background:var(--acc);color:var(--on);font:600 16px Barlow,sans-serif;padding:12px 16px;min-height:44px}
+.btn.g{background:transparent;color:var(--acc);border:1px solid var(--line)}.acts{display:flex;gap:8px;margin-top:8px}.acts .btn:first-child{flex:1}
+.hint{color:var(--warn);font-size:14px;margin-top:6px}.up{color:var(--ok)}.note{margin:4px 0;padding:8px 12px;border-radius:10px;background:var(--okbg);color:var(--ok);font-size:14px}
+nav{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);background:var(--card);border-top:1px solid var(--line);padding:0 max(16px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(16px,env(safe-area-inset-left,0px))}
+nav button{border:0;background:none;color:var(--mut);font:600 16px Barlow,sans-serif;padding:14px 0;min-height:52px}nav .on{color:var(--acc)}
+.sum{display:flex;gap:10px;margin:8px 0}.sum div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}.sum .n{font-size:26px;display:block}
+.rest{display:flex;align-items:center;gap:8px;padding:2px 0}.rest .n{font-size:26px;min-width:56px;text-align:right;margin-left:auto;font-variant-numeric:tabular-nums}
+li{margin:3px 0}ul{padding-left:18px;margin:6px 0}
+</style></head><body>
+<header><h1>Gym Tracker</h1><div class="sub" id="sub"></div></header>
+<div id="app"></div>
+<nav><button data-v="train">Train</button><button data-v="sum">Summary</button><button data-v="body">Body</button></nav>
+<script>
+const RAW=`1|Flat bench press|4×8–10|4×6–8|5×5|4×6–8
+1|Incline DB press|3×10–12|3×8–10|4×6–8|3×8–10
+1|Cable fly / pec deck|3×12–15|3×12–15|3×10–12|3×12–15
+1|Landmine press (1 arm)|3×8–10|4×6–8|4×5|3×6–8
+1|Triceps pushdown|3×12–15|3×10–12|4×8–10|3×10–12
+1|Skull crushers|3×10–12|3×10|3×8–10|3×10
+1|Overhead triceps ext.|3×12–15|3×12|3×10–12|3×12
+1|Reverse wrist curl|2×15–20|3×15|3×12–15|2×15–20
+1|Hanging leg raise|3×8–10|3×10–12|4×10–12|3×10
+1|KB swing|4×15|5×15|6×12|5×15
+1|Jump rope|||
+2|Pull-ups|4×max|4×6–10|4×5–6|4×8
+2|T-bar row|4×8–10|4×8|4×6–8|3×8
+2|Lat pulldown|3×10–12|3×10–12|3×8–10|3×10
+2|Seated cable row|3×10–12|3×10|3×8–10|3×10
+2|Straight-arm pulldown|3×12–15|3×12–15|3×12|3×12
+2|Face pull|3×15|3×15|3×12–15|3×15
+2|Preacher curl|3×10–12|4×8–10|4×8|3×10
+2|Hammer curl|3×10–12|3×10|3×8–10|3×10
+2|Reverse curl (EZ)|3×10–12|3×10–12|3×8–10|3×10–12
+2|Wrist curl|3×15–20|3×12–15|3×12|3×15
+2|Ab wheel / cable crunch|3×8–10|3×10–12|4×10–12|3×10
+2|Dead hang (sec)|3×20–30|3×30–40|3×40–45|3×30
+2|KB clean + press|4×6|4×8|5×5|4×6
+2|Jump rope|||
+3|Box jump|3×5|4×5|4×4|3×5
+3|Romanian deadlift|3×10|3×8–10|4×6–8|3×8–10
+3|Leg press|4×10–12|4×8–10|4×8|3×10
+3|Bulgarian split squat|3×8|3×8|3×6–8|3×8
+3|Leg extension|3×12–15|3×12–15|3×10–12|3×12
+3|Hamstring curl|3×12|3×10–12|4×8–10|3×10
+3|Calf raise|3×12–15|4×12|4×10|3×15
+3|Farmer's carry (m)|3×30|3×40|4×40|3×40
+3|Shoulder press|4×8–10|4×6–8|5×5|4×6–8
+3|Lateral raise|3×12–15|4×12–15|4×10–12|3×15
+3|Rear-delt pec deck|3×15|3×12–15|3×12|3×15
+3|Plate front raise|2×12|2×12|2×10|2×12
+3|Landmine twist|3×10|3×12|4×10|3×10
+3|Plate pinch (sec)|2×20|3×25|3×30|2×30
+3|KB snatch|3×8|4×8|4×10|3×8
+3|Jump rope|||`;
+const EX=RAW.split("\n").map((l,i)=>{const p=l.split("|");return{id:"x"+i,day:+p[0],name:p[1],rx:p.slice(2)}});
+const DN={1:"Chest + Triceps",2:"Back + Biceps",3:"Legs + Shoulders"};
+const JR=["Bounce, boxer step","Boxer step, side swing","Side-to-side jump","DELOAD easy mix","Boxer skip left-right","Skier jumps","High knees, heel-toe","DELOAD easy mix","Criss-cross","Criss-cross + double-unders","Combo flow","DELOAD combos","3-min boxer rounds","Speed + flow","RAMADAN easy flow"];
+const BW=[95,94.5,93.8,93,92.5,92,91.5,91,90.5,90,89.5,89,88.5,88,87.8];
+const PH=["P1 Base","P2 Hypertrophy","P3 Strength + Power","P4 Peak"],DEL=[4,8,12];
+const $=s=>document.querySelector(s),ph=w=>w<=4?0:w<=8?1:w<=12?2:3,isJ=e=>e.name=="Jump rope",isT=e=>/\((sec|m)\)/.test(e.name);
+let rest=0,rt=null;const ft=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+function startRest(s){rest=s;clearInterval(rt);rt=setInterval(()=>{rest--;const e=$("#rt");if(e)e.textContent=rest>0?ft(rest):"Go";if(rest<=0){clearInterval(rt);try{navigator.vibrate&&navigator.vibrate(300)}catch(x){}}},1000)}
+const K="gymtracker1";let S={start:"2026-11-03",log:{},bw:{}},store=null,dl=null,V="train",W=1,Dy=1,open=null,msg="";
+function pos(){const a=new Date(S.start+"T00:00"),t=new Date();t.setHours(0,0,0,0);const d=Math.round((t-a)/864e5);return{w:Math.min(15,Math.max(1,Math.floor(d/7)+1)),d:({0:1,2:2,4:3})[((d%7)+7)%7]||0}}
+function parse(t){const x=t.toLowerCase().replace(/×/g,"x").replace(/[,;]/g," ").trim().split(/\s+/),o=[],n=s=>s=="bw"?0:parseFloat(s.replace("+","").replace("kg",""));
+ if(x.some(s=>s.includes("x")&&s!="bw")){for(const s of x){const m=s.match(/^(bw|\+?\d+(?:\.\d+)?)(?:kg)?x(\d+)$/);if(!m)return null;o.push([n(m[1]),+m[2]])}}
+ else{if(x.length<2||isNaN(n(x[0])))return null;for(const s of x.slice(1)){if(!/^\d+$/.test(s))return null;o.push([n(x[0]),+s])}}
+ return o.every(p=>p[0]>=0&&p[0]<=500&&p[1]>0&&p[1]<=300)?o:null}
+const enc=s=>s.map(p=>p[0]+"x"+p[1]).join(" "),dec=t=>t.split(" ").map(s=>s.split("x").map(Number)),key=(w,e)=>w+"_"+e.id;
+const fmt=(s,e)=>{const same=s.every(p=>p[0]==s[0][0]),u=/sec/.test(e.name)?" s":/\(m\)/.test(e.name)?" m":"";return same?(s[0][0]?s[0][0]+" kg × ":"BW × ")+s.map(p=>p[1]).join("/")+u:s.map(p=>p[0]+"×"+p[1]).join(", ")};
+const vol=(s,e)=>isT(e)?0:s.reduce((a,p)=>a+p[0]*p[1],0);
+function rxp(e,w){const r=e.rx[ph(w)].match(/(\d+)×(\d+)(?:–(\d+))?/);return r?{n:+r[1],lo:+r[2],hi:+(r[3]||r[2])}:null}
+function adj(n,w){return DEL.includes(w)?Math.max(2,Math.round(n*.6)):w==15?Math.max(2,Math.round(n*.65)):n}
+function step(e){return /^KB/.test(e.name)?"next kettlebell size":e.day==3&&!/Shoulder|Lateral|Rear|Plate|Box|twist|Farmer|snatch/.test(e.name)?"+5 kg":/Farmer/.test(e.name)?"+4 kg per hand":"+2.5 kg"}
+function hint(e,w,s){if(DEL.includes(w))return"";const r=rxp(e,w);if(!r||isJ(e))return"";
+ if(s.every(p=>p[1]>=r.hi)&&s.length>=adj(r.n,w))return{up:1,t:"All sets hit "+r.hi+". Next time: "+step(e)+", reps back to "+r.lo};
+ return{t:s.some(p=>p[1]<r.lo)?"Below "+r.lo+" reps: keep weight, build reps":"Keep weight, add reps to "+r.hi}}
+function prev(e,w){for(let i=w-1;i>0;i--){const t=S.log[key(i,e)];if(t)return{w:i,s:dec(t)}}return null}
+const TG=window.Telegram&&Telegram.WebApp,CS=TG&&TG.CloudStorage&&TG.initData?TG.CloudStorage:null;
+const csSet=(k,v)=>new Promise(res=>CS.setItem(k,v,(e)=>res(!e)));
+async function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}
+ if(CS){const by={};for(const k in S.log){const w=k.split("_")[0];(by[w]=by[w]||{})[k]=S.log[k]}
+  for(const w in by)await csSet("w"+w,JSON.stringify(by[w]));await csSet("bw",JSON.stringify(S.bw));
+  for(let w=1;w<=15;w++)if(!by[w])await csSet("w"+w,"{}")}}
+function tgt(e){const r=e.rx[ph(W)],p=rxp(e,W);return isJ(e)?"Focus: "+JR[W-1]:(p&&adj(p.n,W)!=p.n?r+" → ~"+adj(p.n,W)+" sets":r)+(/sec/.test(e.name)?" s":/\(m\)/.test(e.name)?" m":"")}
+function card(e){const t=S.log[key(W,e)],s=t&&dec(t),o=open==e.id,pv=prev(e,W);
+ let h=`<div class="card"><div class="top" data-o="${e.id}"><div><div class="nm">${e.name}</div><div class="tg">${tgt(e)}</div></div><div class="ok">${s?(isJ(e)?"✓ done":fmt(s,e)):""}</div></div>`;
+ if(o){h+=`<div class="ex">`;if(pv&&!isJ(e))h+=`<div class="tg">Last (W${pv.w}): ${fmt(pv.s,e)}</div>`;
+  if(isJ(e))h+=`<div class="acts"><button class="btn" data-j="${e.id}">${s?"Undo":"Mark done"}</button></div>`;
+  else h+=`<input id="in" inputmode="text" autocapitalize="off" autocomplete="off" placeholder="60 10 9 8   or   60x10 62.5x8   or   bw 8 7" value="${(s||(pv&&pv.s)||[]).map(p=>(p[0]||"bw")+"x"+p[1]).join(" ")}"><div class="acts"><button class="btn" data-s="${e.id}">Save</button>${s?`<button class="btn g" data-d="${e.id}">Delete</button>`:""}</div>`;
+  if(s){const k=hint(e,W,s);if(k)h+=`<div class="hint ${k.up?"up":""}">${k.up?"⬆ ":""}${k.t}</div>`}
+  h+=`</div>`}return h+`</div>`}
+function train(){const done=new Set(Object.keys(S.log).filter(k=>k.startsWith(W+"_")));
+ let h=`<div class="rest"><span class="tg">Rest</span>${[60,90,120].map(s=>`<button class="chip" data-r="${s}">${s} s</button>`).join("")}<span class="n" id="rt">${rest>0?ft(rest):""}</span></div><div class="row">${[...Array(15)].map((_,i)=>`<button class="chip ${i+1==W?"on":""} ${EX.some(e=>S.log[key(i+1,e)])?"done":""}" data-w="${i+1}">W${i+1}</button>`).join("")}</div><div class="days">${[1,2,3].map(d=>`<button class="chip ${d==Dy?"on":""}" data-y="${d}">Day ${d}<br><small>${DN[d]}</small></button>`).join("")}</div>`;
+ if(msg)h+=`<div class="note">${msg}</div>`;
+ const p=pos();if(W==p.w&&!p.d)h+=`<div class="note">Today is a walk / rest day. You can still log below.</div>`;
+ return h+EX.filter(e=>e.day==Dy).map(card).join("")}
+function summ(){const l=EX.filter(e=>S.log[key(W,e)]);let h=`<div class="rest"><span class="tg">Rest</span>${[60,90,120].map(s=>`<button class="chip" data-r="${s}">${s} s</button>`).join("")}<span class="n" id="rt">${rest>0?ft(rest):""}</span></div><div class="row">${[...Array(15)].map((_,i)=>`<button class="chip ${i+1==W?"on":""}" data-w="${i+1}">W${i+1}</button>`).join("")}</div>`;
+ if(!l.length)return h+`<div class="card tg">No data for week ${W} yet.</div>`;
+ let tv=0,ts=0,ups=[],body="";
+ for(const d of [1,2,3]){const ex=l.filter(e=>e.day==d);if(!ex.length)continue;let dv=0;body+=`<div class="card"><b>Day ${d}: ${DN[d]}</b> <span class="tg">(${ex.length}/${EX.filter(e=>e.day==d).length})</span><ul>`;
+  for(const e of ex){const s=dec(S.log[key(W,e)]),v=vol(s,e),pv=prev(e,W);dv+=v;ts+=s.length;let dl="";if(pv&&v){const x=v-vol(pv.s,e);dl=` <span class="tg">(${x>=0?"+":""}${x} kg vs W${pv.w})</span>`}
+   body+=`<li>${e.name}: ${isJ(e)?"done":fmt(s,e)}${dl}</li>`;const k=hint(e,W,s);if(k&&k.up)ups.push(e.name+" ("+step(e)+")")}
+  tv+=dv;body+=`</ul><div class="tg">Day volume: ${dv} kg</div></div>`}
+ h+=`<div class="sum"><div><span class="n">${l.length}/${EX.length}</span>exercises</div><div><span class="n">${ts}</span>sets</div><div><span class="n">${tv}</span>kg volume</div></div>`+body;
+ if(ups.length)h+=`<div class="card"><b class="up">⬆ Increase next session</b><ul>${ups.map(u=>`<li>${u}</li>`).join("")}</ul></div>`;
+ return h+(dl?`<div class="acts" style="margin:8px 0"><button class="btn g" data-x="1">Export CSV</button></div>`:"")}
+function body(){const r=Object.entries(S.bw).sort().slice(-10).reverse();
+ return `<div class="card"><b>Morning weight (kg)</b><div class="tg">Target end of week ${W}: ${BW[W-1]} kg</div><div class="acts"><input id="bw" inputmode="decimal" placeholder="94.5"><button class="btn" data-b="1">Save</button></div></div>
+ <div class="card"><b>Recent</b><ul>${r.length?r.map(([d,k])=>`<li>${d}: ${k} kg</li>`).join(""):"<li class='tg'>Nothing logged yet</li>"}</ul>${r.length>1?`<div class="tg">Change: ${(r[0][1]-r[r.length-1][1]).toFixed(1)} kg over this period</div>`:""}</div>`}
+function render(){const p=ph(W);$("#sub").textContent=`Week ${W} · ${DEL.includes(W)?"DELOAD (weights −10%, sets −40%)":W==15?"RAMADAN (sets −35%)":PH[p]}`;
+ document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==V));
+ $("#app").innerHTML=V=="train"?train():V=="sum"?summ():body()}
+document.addEventListener("click",async ev=>{const t=ev.target.closest("[data-o],[data-w],[data-y],[data-s],[data-d],[data-j],[data-b],[data-x],[data-v],[data-r]");if(!t)return;const g=k=>t.dataset[k],ex=id=>EX.find(e=>e.id==id);msg="";
+ if(g("r")){startRest(+g("r"))}else if(g("v")){V=g("v");open=null}else if(g("w")){W=+g("w");open=null}else if(g("y")){Dy=+g("y");open=null}
+ else if(g("o")){open=open==g("o")?null:g("o")}
+ else if(g("s")){const s=parse($("#in").value);if(!s){msg="Could not read that. Example: 60 10 9 8";}else{const e=ex(g("s"));S.log[key(W,e)]=enc(s);open=null;msg="Saved "+e.name;startRest(90);await save()}}
+ else if(g("d")){delete S.log[key(W,ex(g("d")))];open=null;await save()}
+ else if(g("j")){const k=key(W,ex(g("j")));S.log[k]?delete S.log[k]:S.log[k]="0x1";open=null;await save()}
+ else if(g("b")){const k=parseFloat($("#bw").value.replace(",","."));if(k>30&&k<300){S.bw[new Date().toISOString().slice(0,10)]=k;await save()}}
+ else if(g("x")&&dl){const r=["week,day,exercise,set,weight_kg,reps"];for(const e of EX)for(let w=1;w<=15;w++){const q=S.log[key(w,e)];if(q)dec(q).forEach((p,i)=>r.push([w,e.day,'"'+e.name+'"',i+1,p[0],p[1]].join(",")))}
+  try{await dl.save({data:r.join("\n")})}catch(e){msg="Could not copy CSV"}}
+ render();if(open)setTimeout(()=>{const i=$("#in");i&&i.focus()},50)});
+(function(){const p=pos();W=p.w;Dy=p.d||1;render()})();
+(async()=>{try{if(TG){TG.ready();TG.expand()}}catch(e){}
+ try{const l=localStorage.getItem(K);if(l)S=Object.assign(S,JSON.parse(l))}catch(e){}
+ if(CS){try{const keys=["bw"].concat([...Array(15)].map((_,i)=>"w"+(i+1)));
+  const got=await new Promise(res=>CS.getItems(keys,(e,v)=>res(e?null:v)));
+  if(got){const log={};for(let w=1;w<=15;w++)try{Object.assign(log,JSON.parse(got["w"+w]||"{}"))}catch(e){}
+   let bw={};try{bw=JSON.parse(got.bw||"{}")}catch(e){}
+   if(Object.keys(log).length||Object.keys(bw).length){S.log=log;S.bw=bw}}}catch(e){}}
+ dl={save:async({data})=>{await navigator.clipboard.writeText(data);msg="CSV copied to clipboard. Paste it into Notes or Excel.";}};
+ render()})();
+</script></body></html>
